@@ -111,8 +111,11 @@ const displayController = (function() {
     const getBoxNumber = (row, col) => {
       return row * 3 + col;
     };
-  
-    return {setCurrentPlayer, updateDisplay, scoreDisplay, clearDisplay, getCoordinates};
+    const resultsDisplay = (result) =>{
+        const results = document.querySelector('.results');
+        results.textContent = result;
+    };
+    return {setCurrentPlayer, updateDisplay, scoreDisplay, clearDisplay, resultsDisplay, getCoordinates};
   })();
   
   const playGame = (function() {
@@ -141,6 +144,7 @@ const displayController = (function() {
 
         if (gameBoard.winRound()) {
             console.log(`${currentPlayer.getName()} is the winner!`);
+            displayController.resultsDisplay(`${currentPlayer.getName()} is the winner!`);
             currentPlayer.win();
             displayController.scoreDisplay(players);
             gameBoard.clearBoard();
@@ -149,8 +153,8 @@ const displayController = (function() {
         }else if(gameBoard.isBoardFilled().filled){
             if(gameBoard.isBoardFilled().tie){
                  console.log("It's a tie");
+                 displayController.resultsDisplay("It's a tie");
             }
-            console.log("Game over!");
             gameBoard.clearBoard();
             displayController.clearDisplay();
         }
