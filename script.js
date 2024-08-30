@@ -25,8 +25,12 @@ const gameBoard = (function () {
       console.table(board);
     };
   
-    const isBoardFilled = () => board.every(row => row.every(column => column !== " "));
-  
+    const isBoardFilled = () => {
+        const filled = board.every(row => row.every(column => column !== " "));
+        const tie = !winRound();
+        return { filled, tie };
+      };
+
     const isLineFilled = (line) => {
       const cells = line.map(index => board[index[0]][index[1]]);
       return cells.every(cell => cell === cells[0] && cell !== " ");
@@ -58,65 +62,93 @@ function createPlayer(name){
     const setSymbol = (symbol) => mySymbol = symbol;
     const getSymbol = () => mySymbol;
     const win = () => myScore++;
+    const resetScore = () => myScore = 0;
     const getScore = () => myScore;
     const getName = () => myName;
 
-    return {setSymbol, getSymbol, win, getScore, getName};
+    return {setSymbol, getSymbol, win, getScore, getName, resetScore};
 }
 
-const displayController = ( function (){
+const displayController = (function() {
     const gameContainer = document.querySelector('.game-container');
     const playerInformation = document.querySelector('.player-information');
-    for(let i=0; i<9; i++){
-        const gameBox = document.createElement('div');
-        gameBox.setAttribute('id', `${i}`)
-        gameBox.classList.add('game-box');
-        gameContainer.appendChild(gameBox);
-    }
+    let currentPlayer;
+
+    const setCurrentPlayer = (player) => {
+        currentPlayer = player;
+      };
+    // Display components
+    const createGameBoxes = ( function(){
+        for (let i = 0; i < 9; i++) {
+            const gameBox = document.createElement('div');
+            gameBox.classList.add('game-box');
+            gameBox.id = i;
+            gameContainer.appendChild(gameBox);
+          }
+    })();
+    const clearDisplay = () => {
+        const gameBoxes = document.querySelectorAll('.game-box');
+        gameBoxes.forEach((box) => {
+          box.textContent = '';
+        });
+      };
+    const updateDisplay = (boxNumber, symbol) => {
+        const box = document.getElementById(boxNumber);
+        box.textContent = symbol;
+    };
+    const scoreDisplay = (players) => {
+        playerInformation.textContent = `Player1: ${players[0].getScore()} | Player2: ${players[1].getScore()}`
+    };
+    // Helper functions
     const getCoordinates = (boxNumber) => {
-        const row = Math.floor(boxNumber / 3);
-        const col = boxNumber % 3;
-        return [row, col];
+      const row = Math.floor(boxNumber / 3);
+      const col = boxNumber % 3;
+      return [row, col];
     };
+  
     const getBoxNumber = (row, col) => {
-        return row * 3 + col;
+      return row * 3 + col;
     };
-    const onClick = (player) => {
-        gameContainer.addEventListener('click',(e) => {
-        let target = e.target;
-        let [row, column] = getCoordinates(target.id);
-        gameBoard.playRound(player, row, column);
-    })};
-    const updateDisplay = () => {
-        
-    }
-
-      return {onClick};
-})();
-
-const playGame = ( function() {
-    const player1 = createPlayer(prompt("Enter First Player name: "));
-    const player2 = createPlayer(prompt("Enter Second Player name: "));
-    
+  
+    return {setCurrentPlayer, updateDisplay, scoreDisplay, clearDisplay, getCoordinates};
+  })();
+  
+  const playGame = (function() {
+    const player1 = createPlayer('player1');
+    const player2 = createPlayer('player2');
+  
     player1.setSymbol("x");
     player2.setSymbol("o");
     const players = [player1, player2];
+  
+    displayController.scoreDisplay(players);
+    displayController.setCurrentPlayer(player1);
 
-    while(!gameBoard.isBoardFilled()){
-        for(const player of players) {
-            let [x, y] = prompt(`${player} enter (x,y) location: `).split(' ');
-            gameBoard.playRound(player, x, y);
-            gameBoard.generateBoard();
-            if(gameBoard.winRound()){
-                console.log(`${player.getName()} wins`)
-                gameBoard.clearBoard();
-                return;
+    let currentPlayer = player1;
+    const gameContainer = document.querySelector('.game-container');
+    gameContainer.addEventListener('click', (e) => {
+
+        const target = e.target;
+        let [row, column] = displayController.getCoordinates(target.id);
+        gameBoard.playRound(currentPlayer, row, column);
+        displayController.updateDisplay(target.id, currentPlayer.getSymbol());
+
+        if (gameBoard.winRound()) {
+            console.log(`${currentPlayer.getName()} is the winner!`);
+            currentPlayer.win();
+            displayController.scoreDisplay(players);
+            gameBoard.clearBoard();
+            displayController.clearDisplay();
+
+        }else if(gameBoard.isBoardFilled().filled){
+            if(gameBoard.isBoardFilled().tie){
+                 console.log("It's a tie");
             }
+            console.log("Game over!");
+            gameBoard.clearBoard();
+            displayController.clearDisplay();
         }
-    }
-    if(gameBoard.isFilled() && !gameBoard.winRound()){
-        console.log('Tie!');
-    }
-
-})();
-
+        currentPlayer = currentPlayer === player1 ? player2 : player1;
+        displayController.setCurrentPlayer(currentPlayer);
+    })
+  })();
