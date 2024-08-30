@@ -51,8 +51,10 @@ const gameBoard = (function () {
   
       return false;
     };
+
+    const isBoxEmpty = (row, column) => board[row][column] === " ";
   
-    return { playRound, isBoardFilled, clearBoard, winRound, generateBoard };
+    return { playRound, isBoardFilled, clearBoard, winRound, generateBoard, isBoxEmpty};
   })();
 
 function createPlayer(name){
@@ -130,6 +132,10 @@ const displayController = (function() {
 
         const target = e.target;
         let [row, column] = displayController.getCoordinates(target.id);
+        if(!gameBoard.isBoxEmpty(row, column)){
+            console.log("Cell is already occupied");
+            return;
+        }
         gameBoard.playRound(currentPlayer, row, column);
         displayController.updateDisplay(target.id, currentPlayer.getSymbol());
 
